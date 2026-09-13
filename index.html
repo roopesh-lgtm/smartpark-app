@@ -51,14 +51,22 @@
 <div class="card analytics-block">
   <div class="head"><h3>Hourly Occupancy</h3><small>COMPLETED HOURS</small></div>
   <p class="chart-subtitle">After each hour completes, its bar shows the average occupancy from that hour's 5-minute samples.</p>
-  <div class="summary-scroll"><div class="summary-content"><div class="summary-bars" id="hourlyBars"></div><div class="summary-labels" id="hourlyLabels"></div></div></div>
+  <div class="summary-chart-frame">
+    <div class="summary-y-axis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+    <div class="summary-scroll" id="hourlyScroll"><div class="summary-content"><div class="summary-plot"><div class="gridline g100"></div><div class="gridline g75"></div><div class="gridline g50"></div><div class="gridline g25"></div><div class="gridline g0"></div><div class="summary-bars" id="hourlyBars"></div></div><div class="summary-labels" id="hourlyLabels"></div></div></div>
+  </div>
+  <div class="x-axis-title">Time (IST)</div>
 </div>
 
 <div class="card analytics-block">
   <div class="head"><h3>Daily Overview</h3><small>DAY SUMMARY</small></div>
   <p class="chart-subtitle">At the end of each day, the complete day's average becomes one daily bar.</p>
   <div class="daily-now" id="todaySummary">Today: waiting for data</div>
-  <div class="summary-scroll"><div class="summary-content daily-content"><div class="summary-bars" id="dailyBars"></div><div class="summary-labels" id="dailyLabels"></div></div></div>
+  <div class="summary-chart-frame">
+    <div class="summary-y-axis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+    <div class="summary-scroll" id="dailyScroll"><div class="summary-content daily-content"><div class="summary-plot"><div class="gridline g100"></div><div class="gridline g75"></div><div class="gridline g50"></div><div class="gridline g25"></div><div class="gridline g0"></div><div class="summary-bars" id="dailyBars"></div></div><div class="summary-labels" id="dailyLabels"></div></div></div>
+  </div>
+  <div class="x-axis-title">Day</div>
   <div class="peak-line" id="peakInfo">Peak occupancy: calculating…</div>
 </div>
 </section>
