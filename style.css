@@ -108,36 +108,46 @@
 }
 
 /* v8.10 multi-level occupancy analytics */
-.analytics-block{height:auto!important;margin-top:16px;overflow:hidden}
+.analytics-block{height:auto!important;margin-top:16px}
 .analytics-block .head{height:auto!important;display:flex;align-items:center;justify-content:space-between}
 .analytics-block .head small{color:#59e5b5;letter-spacing:1px;font-weight:800}
-
-/* Hourly and daily charts intentionally use the same 0–100% axis and scroll model as the 5-minute chart. */
-.summary-chart-frame{display:flex;align-items:stretch;gap:10px;width:100%;height:272px;overflow:hidden}
-.summary-y-axis{width:40px;flex:0 0 40px;height:220px;display:flex;flex-direction:column;justify-content:space-between;padding:0 2px 0 0;text-align:right;color:#71869b;font-size:9px}
-.summary-scroll{flex:1;min-width:0;height:272px;overflow-x:auto;overflow-y:hidden;scroll-behavior:smooth;scrollbar-width:thin}
-.summary-content{height:272px;min-width:100%;width:max-content}
-.summary-plot{position:relative;width:max(100%, 980px);height:220px;border-left:1px solid #294255;border-bottom:1px solid #294255;overflow:hidden}
-.summary-plot .gridline{position:absolute;left:0;right:0;border-top:1px dashed #20394b;pointer-events:none}
-.summary-bars{position:absolute;left:0;bottom:0;height:100%;display:flex;align-items:flex-end;gap:9px;padding:0 8px;min-width:100%;width:max-content;overflow:visible}
-.summary-bar-wrap{height:100%;width:38px;min-width:38px;display:flex;align-items:flex-end;justify-content:center}
-.summary-bar{display:block;width:26px;min-height:2px;background:#42e2b0;border-radius:6px 6px 2px 2px;box-shadow:0 0 10px #42e2b022;transition:height .4s}
-.summary-labels{display:flex;gap:9px;padding:7px 8px 2px;height:42px}
-.summary-labels span{width:38px;min-width:38px;text-align:center;color:#71869b;font-size:9px;white-space:nowrap}
+.summary-scroll{width:100%;overflow-x:auto;overflow-y:hidden;padding-bottom:5px}
+.summary-content{min-width:100%;width:max-content}
+.summary-bars{height:190px;min-width:100%;display:flex;align-items:flex-end;gap:12px;padding:12px 8px 0;border-bottom:1px solid #294255}
+.summary-bar-wrap{height:100%;width:42px;min-width:42px;display:flex;align-items:flex-end;justify-content:center}
+.summary-bar{display:block;width:30px;min-height:8px;background:#42e2b0;border-radius:7px 7px 2px 2px;box-shadow:0 0 10px #42e2b022;transition:height .4s}
+.summary-labels{display:flex;gap:12px;padding:7px 8px 2px}
+.summary-labels span{width:42px;min-width:42px;text-align:center;color:#71869b;font-size:9px;white-space:nowrap}
 .summary-empty{color:#71869b;padding:80px 20px;text-align:center;width:100%}
 .daily-now{margin:10px 0;padding:10px 12px;border-radius:10px;background:#0c1b2b;color:#a8bac9;font-size:11px}
-.daily-content .summary-plot{min-width:980px}
-.peak-line{margin-top:12px;padding:10px 12px;border-radius:10px;background:#0c1b2b;color:#a8bac9;font-size:11px}
+.daily-content .summary-bars{height:170px}
 @media(max-width:767px){
-  .summary-chart-frame{height:272px;gap:7px}
-  .summary-y-axis{width:34px;flex-basis:34px;height:215px;font-size:8px}
-  .summary-scroll{height:272px}
-  .summary-content{height:272px}
-  .summary-plot{height:215px;min-width:980px}
-  .summary-bars{gap:7px;padding:0 8px}
-  .summary-bar-wrap,.summary-labels span{width:31px;min-width:31px}
-  .summary-bar{width:20px}
-  .summary-labels{gap:7px;height:42px;padding:7px 8px 2px}
-  .summary-labels span{font-size:7px}
-  .daily-content .summary-plot{min-width:980px}
+  .summary-bars{gap:9px}
+  .summary-bar-wrap,.summary-labels span{width:38px;min-width:38px}
+  .summary-bar{width:26px}
+  .summary-labels{gap:9px}
+}
+
+/* v8.10.3: hourly/daily charts use the same 0-100% axis and true horizontal scrolling */
+.summary-chart-frame{display:flex;gap:8px;width:100%;height:260px}
+.summary-y-axis{width:38px;flex:0 0 38px;display:flex;flex-direction:column;justify-content:space-between;padding:0 0 30px;text-align:right;color:#71869b;font-size:9px}
+.summary-scroll{width:100%;overflow-x:auto;overflow-y:hidden;padding-bottom:5px;scroll-behavior:smooth}
+.summary-content{width:max-content;min-width:100%}
+.summary-plot{position:relative;height:230px;min-width:100%;border-left:1px solid #294255;border-bottom:1px solid #294255;overflow:hidden}
+.summary-grid{position:absolute;left:0;right:0;border-top:1px dashed #20394b;pointer-events:none}
+.summary-grid.g100{top:0}.summary-grid.g75{top:25%}.summary-grid.g50{top:50%}.summary-grid.g25{top:75%}.summary-grid.g0{bottom:0}
+.summary-bars{position:absolute;left:0;right:0;bottom:0;height:100%;display:flex;align-items:flex-end;gap:12px;padding:0 10px;min-width:max-content}
+.summary-bar-wrap{height:100%;width:42px;min-width:42px;display:flex;align-items:flex-end;justify-content:center}
+.summary-bar{display:block;width:30px;min-height:4px;border-radius:7px 7px 2px 2px;box-shadow:0 0 10px #42e2b022;transition:height .4s}
+.summary-labels{display:flex;gap:12px;padding:7px 10px 2px}
+.summary-labels span{width:42px;min-width:42px;text-align:center;color:#71869b;font-size:9px;white-space:nowrap}
+.summary-empty{color:#71869b;padding:95px 20px;text-align:center;min-width:260px}
+.daily-content .summary-plot{height:230px}
+@media(max-width:767px){
+  .summary-chart-frame{height:250px}
+  .summary-plot{height:220px}
+  .summary-bars{gap:9px;padding:0 8px}
+  .summary-bar-wrap,.summary-labels span{width:38px;min-width:38px}
+  .summary-bar{width:26px}
+  .summary-labels{gap:9px;padding-left:8px;padding-right:8px}
 }

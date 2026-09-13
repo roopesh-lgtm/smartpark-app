@@ -110,9 +110,25 @@ function finalizeCompletedPeriods(currentHourKey,currentDayKey){
       });
     }
   }
-  state.dailyHistory=state.dailyHistory.slice(-7);
+  state.dailyHistory=state.dailyHistory.slice(-30);
+}
+function rolloverAnalyticsIfNeeded(){
+  const currentDayKey=indiaDayKey(new Date().toISOString());
+  const latest=state.fiveMinuteSamples.length?indiaDayKey(state.fiveMinuteSamples[state.fiveMinuteSamples.length-1].time):currentDayKey;
+  if(latest===currentDayKey) return false;
+
+  // Finalize the old day before clearing its detailed/hourly data.
+  finalizeCompletedPeriods(indiaHourKey(new Date().toISOString()),currentDayKey);
+  state.fiveMinuteSamples=[];
+  state.hourlyHistory=[];
+  lastSampleBucket=null;
+  lastHistoryOccupancy=null;
+  lastFinalizedHourKey=null;
+  lastFinalizedDayKey=currentDayKey;
+  return true;
 }
 function sampleFiveMinute(force=false){
+  rolloverAnalyticsIfNeeded();
   if(!state.deviceOnline && !force) return false;
   const nowMs=Date.now();
   const bucket=Math.floor(nowMs/FIVE_MINUTE_MS);
@@ -214,7 +230,7 @@ app.post('/api/demo/slot',(req,res)=>{
     const next=state.slots.findIndex(v=>!v); state.recommended=next<0?0:next+1;
     state.events.unshift({a:`🅿️ SLOT ${String(i+1).padStart(2,'0')} OCCUPIED`,b:'Vehicle detected',time:now()});
   }
-  trim(); broadcast(); res.json(state);
+  touch(); sampleFiveMinute(true); trim(); broadcast(); res.json(state);
 });
 app.post('/api/demo/forced',(req,res)=>{recordForced();res.json(state);});
 app.post('/api/demo/emergency',(req,res)=>{recordEmergency(!state.em);res.json(state);});
@@ -247,6 +263,8 @@ app.post('/api/device/event',(req,res)=>{
 });
 
 setInterval(()=>{
+  const rolled=rolloverAnalyticsIfNeeded();
+  if(rolled) broadcast();
   if(state.deviceOnline) {
     if(sampleFiveMinute()) broadcast();
   }

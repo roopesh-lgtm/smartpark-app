@@ -136,22 +136,22 @@ function renderHistory(){
 function renderSummaryBars(barId,labelId,data,valueFn,labelFn,titleFn){
   const bars=document.getElementById(barId), labels=document.getElementById(labelId);
   if(!bars||!labels)return;
-  const content=bars.closest('.summary-content');
-  const scroll=bars.closest('.summary-scroll');
   if(!data.length){
     bars.innerHTML='<div class="summary-empty">No completed period yet</div>';
     labels.innerHTML='';
+    const content=bars.closest('.summary-content');
     if(content) content.style.width='100%';
     return;
   }
-  bars.innerHTML=data.map(x=>`<div class="summary-bar-wrap" title="${titleFn(x)}"><i class="summary-bar" style="height:${Math.max(2,valueFn(x))}%"></i></div>`).join('');
-  labels.innerHTML=data.map(x=>`<span>${labelFn(x)}</span>`).join('');
-  const width=Math.max(980,data.length*38+32);
+  bars.innerHTML=data.map(x=>`<div class="summary-bar-wrap" title="${titleFn(x)}"><i class="summary-bar" style="height:${Math.max(2,Math.min(100,valueFn(x)))}%"></i></div>`).join('');
+  labels.innerHTML=data.map(x=>`<span title="${titleFn(x)}">${labelFn(x)}</span>`).join('');
+  const content=bars.closest('.summary-content');
+  const width=Math.max(720,data.length*54+20);
   if(content) content.style.width=width+'px';
-  requestAnimationFrame(()=>{
-    if(scroll) scroll.scrollLeft=scroll.scrollWidth-scroll.clientWidth;
-  });
+  const scroll=bars.closest('.summary-scroll');
+  if(scroll) requestAnimationFrame(()=>{scroll.scrollLeft=scroll.scrollWidth-scroll.clientWidth;});
 }
+
 function dayKey(iso){
   const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(iso));
   const g=t=>p.find(x=>x.type===t)?.value||'';
