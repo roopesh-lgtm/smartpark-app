@@ -12,7 +12,7 @@
 <button data-s="security">⚠ <span>Security</span></button>
 <button data-s="alerts">♢ <span>Alerts</span></button>
 <button data-s="settings">⚙ <span>Settings</span></button>
-</nav><div class="online">● <span>ESP32 ONLINE<small>Live connection</small></span></div></aside>
+</nav><div class="online"><span id="deviceDot">●</span> <span id="deviceState">ESP32 ONLINE<small>Live connection</small></span></div></aside>
 <main><header><div><small>SMART PARKING SYSTEM</small><h1 id="title">Live Dashboard</h1></div><div>🟢 <b>LIVE</b>　🔔</div></header>
 
 <section id="home" class="screen active">
@@ -29,5 +29,5 @@
 <section id="analytics" class="screen"><div class="intro"><label>SYSTEM INSIGHTS</label><h2>Parking Analytics</h2></div><div class="stats"><article>Vehicles Entered<strong id="vin">37</strong></article><article>Vehicles Exited<strong id="vout">35</strong></article><article>Peak Occupancy<strong>100%</strong></article><article>Security Events<strong id="sc">0</strong></article></div><div class="card chart"><h3>Occupancy Today</h3><div id="bars"></div></div></section>
 <section id="security" class="screen"><div class="intro"><label>PROTECTION</label><h2>Security Center</h2></div><div id="securityCard" class="security"><span>🛡️</span><div><small>CURRENT STATUS</small><h2 id="ss">SYSTEM SECURE</h2><p id="st">No active security alert.</p></div></div><div class="cols"><div class="card"><h3>Forced Entry</h3><h2 id="fc">0</h2><button onclick="forced()">Simulate Alert</button></div><div class="card"><h3>Emergency Mode</h3><h2 id="em">NORMAL</h2><button onclick="emergency()">Toggle Emergency</button></div></div></section>
 <section id="alerts" class="screen"><div class="intro"><label>EVENT CENTER</label><h2>Notifications</h2></div><div class="card" id="notes"></div></section>
-<section id="settings" class="screen"><div class="intro"><label>CONTROL CENTER</label><h2>Settings</h2></div><div class="card settings"><div>Security alerts <b>ON</b></div><div>Emergency alerts <b>ON</b></div><div>Parking full alerts <b>ON</b></div><div>Slot available alerts <b>ON</b></div><div>Application <b>SmartPark v1.0</b></div></div></section>
+<section id="settings" class="screen"><div class="intro"><label>CONTROL CENTER</label><h2>Settings</h2></div><div class="card settings"><div>Security alerts <b>ON</b></div><div>Emergency alerts <b>ON</b></div><div>Parking full alerts <b>ON</b></div><div>Slot available alerts <b>ON</b></div><div>Push notifications <b id="pushStatus">PUSH NOT ENABLED</b></div><div><span>Phone alerts</span><button id="enablePush" class="push-btn">Enable Push Notifications</button></div><div>Application <b>SmartPark v1.1</b></div></div></section>
 </main></div><div id="toast"></div><script src="app.js"></script></body></html>
