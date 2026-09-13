@@ -10,6 +10,17 @@ function render(){
   const o=S.slots.reduce((a,b)=>a+b,0), f=4-o, p=Number.isFinite(S.occupancy)?S.occupancy:o*25;
   document.getElementById('occ').textContent=o; document.getElementById('free').textContent=f; document.getElementById('pct').textContent=p+'%';
   document.getElementById('hp').textContent=p+'%'; document.getElementById('pt').textContent=p+'%'; document.getElementById('bar').style.width=p+'%';
+  const ring=document.getElementById('ringProgress');
+  if(ring){
+    const circumference=2*Math.PI*54;
+    const clamped=Math.max(0,Math.min(100,p));
+    ring.style.strokeDasharray=circumference.toFixed(2);
+    ring.style.strokeDashoffset=(circumference*(1-clamped/100)).toFixed(2);
+    ring.classList.toggle('low',clamped<50);
+    ring.classList.toggle('medium',clamped>=50 && clamped<75);
+    ring.classList.toggle('high',clamped>=75 && clamped<100);
+    ring.classList.toggle('full',clamped>=100);
+  }
   const r=S.recommended||S.slots.findIndex(x=>!x)+1; document.getElementById('rec').textContent=r?'SLOT '+String(r).padStart(2,'0'):'FULL';
   document.getElementById('eg').textContent=S.entry?'OPEN':'CLOSED'; document.getElementById('xg').textContent=S.exit?'OPEN':'CLOSED';
   document.getElementById('entryGateCard').classList.toggle('gate-closed',!S.entry); document.getElementById('exitGateCard').classList.toggle('gate-closed',!S.exit);

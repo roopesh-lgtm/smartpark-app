@@ -17,7 +17,13 @@
 <div id="systemStatusCard" class="system-status online"><div class="status-icon" id="systemStatusIcon">●</div><div><small>SYSTEM STATUS</small><strong id="systemStatusText">ESP32 ONLINE</strong><span id="systemStatusDetail">Live connection</span></div><div class="last-seen"><small>LAST UPDATE</small><b id="lastSeenText">Waiting…</b></div></div>
 
 <section id="home" class="screen active">
-<div class="hero"><div><label>REAL-TIME PARKING</label><h2>Know your parking.<br><em>At a glance.</em></h2><p>Live occupancy, intelligent guidance, gate status and security events.</p></div><div class="ring"><b id="hp">50%</b><small>occupied</small></div></div>
+<div class="hero"><div><label>REAL-TIME PARKING</label><h2>Know your parking.<br><em>At a glance.</em></h2><p>Live occupancy, intelligent guidance, gate status and security events.</p></div><div class="ring" id="occupancyRing" aria-label="Parking occupancy">
+<svg class="ring-svg" viewBox="0 0 140 140" aria-hidden="true">
+<circle class="ring-track" cx="70" cy="70" r="54"></circle>
+<circle class="ring-progress" id="ringProgress" cx="70" cy="70" r="54"></circle>
+</svg>
+<div class="ring-content"><b id="hp">50%</b><small>occupied</small></div>
+</div></div>
 <div class="stats"><article>Total Slots<strong>4</strong></article><article class="green">Available<strong id="free">2</strong></article><article class="red">Occupied<strong id="occ">2</strong></article><article>Occupancy<strong id="pct">50%</strong></article></div>
 <div class="cols"><div class="card"><div class="head"><h3>Parking Map</h3><small>● LIVE</small></div><div id="map" class="slots"></div><div class="entrance">ENTRANCE ───────── 🚧</div></div>
 <div class="card"><div class="head"><h3>Smart Guidance</h3><span>⌖</span></div><div class="recommend"><b id="rec">SLOT 01</b><span>Recommended available slot<br><small>Follow the live parking map.</small></span></div>
