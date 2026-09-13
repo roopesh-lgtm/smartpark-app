@@ -1,4 +1,4 @@
-const S={slots:[0,1,0,1],forced:0,forcedActive:false,em:false,entry:1,exit:0,recommended:2,occupancy:50,vehiclesEntered:0,vehiclesExited:0,deviceOnline:false,lastSeen:null,history:[],peak:{occupancy:0,time:null},notes:[]};
+const S={slots:[0,1,0,1],forced:0,forcedActive:false,em:false,entry:1,exit:0,recommended:2,occupancy:50,vehiclesEntered:0,vehiclesExited:0,deviceOnline:false,lastSeen:null,history:[],fiveMinuteSamples:[],hourlyHistory:[],dailyHistory:[],peak:{occupancy:0,time:null},notes:[]};
 const names={home:'Live Dashboard',parking:'Parking Area',analytics:'Parking Analytics',security:'Security Center',alerts:'Notifications',settings:'Settings'};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showScreen(b.dataset.s));
 
@@ -27,6 +27,7 @@ function render(){
   document.getElementById('em').textContent=S.em?'ACTIVE':'NORMAL';
   document.getElementById('fc').textContent=S.forced; document.getElementById('sc').textContent=S.forced;
   document.getElementById('vin').textContent=S.vehiclesEntered; document.getElementById('vout').textContent=S.vehiclesExited;
+  const peakValue=document.getElementById('peakValue'); if(peakValue) peakValue.textContent=S.peak&&S.peak.time?S.peak.occupancy+'%':'—';
   document.getElementById('forcedStatus').textContent=S.forcedActive?'DETECTED':'NORMAL';
   document.getElementById('forcedCount').textContent=S.forced+(S.forced===1?' event':' events');
   document.getElementById('emergencyStatus').textContent=S.em?'ACTIVE':'NORMAL';
@@ -79,6 +80,9 @@ async function applyState(d){
   if('deviceOnline'in d)S.deviceOnline=!!d.deviceOnline;
   if('lastSeen'in d)S.lastSeen=d.lastSeen;
   if(Array.isArray(d.history))S.history=d.history;
+  if(Array.isArray(d.fiveMinuteSamples))S.fiveMinuteSamples=d.fiveMinuteSamples;
+  if(Array.isArray(d.hourlyHistory))S.hourlyHistory=d.hourlyHistory;
+  if(Array.isArray(d.dailyHistory))S.dailyHistory=d.dailyHistory;
   if(d.peak)S.peak=d.peak;
   if(d.events)S.notes=d.events.map(e=>({a:e.a,b:e.b,time:e.time}));
   render();
@@ -97,17 +101,61 @@ function renderHistory(){
   const el=document.getElementById('bars');
   const labels=document.getElementById('timeLabels');
   if(!el||!labels)return;
-  const data=(S.history||[]).slice(-24);
-  if(!data.length){
+  const detail=(S.fiveMinuteSamples||[]).slice(-288);
+  const hourly=(S.hourlyHistory||[]).slice(-24);
+  const daily=(S.dailyHistory||[]).slice(-7);
+  const currentDay=(detail.length?detail[detail.length-1].time:null);
+  const currentDayKey=currentDay?dayKey(currentDay):null;
+  const todaySamples=detail.filter(x=>!currentDayKey||dayKey(x.time)===currentDayKey);
+  const todayAvg=todaySamples.length?Math.round(todaySamples.reduce((sum,x)=>sum+x.occupancy,0)/todaySamples.length):null;
+
+  if(!detail.length){
     el.innerHTML='<div class="chart-empty">Waiting for real IoT occupancy history…</div>';
     labels.innerHTML='';
-    document.getElementById('peakInfo').textContent='Peak occupancy: waiting for data';
+  }else{
+    el.innerHTML=detail.map(p=>`<div class="time-bar-wrap" title="${formatTime(p.time)} — ${p.occupancy}% occupied (${p.occupied}/4)"><i class="time-bar" style="height:${Math.max(2,p.occupancy)}%"></i></div>`).join('');
+    labels.innerHTML=detail.map(p=>`<span title="${formatTime(p.time)} — ${p.occupancy}%">${formatTime(p.time).replace(':00 ',' ')}</span>`).join('');
+    const chartContent=document.getElementById('chartContent');
+    if(chartContent) chartContent.style.width=Math.max(980,detail.length*39+20)+'px';
+    const scroll=document.getElementById('chartScroll');
+    if(scroll) requestAnimationFrame(()=>{scroll.scrollLeft=scroll.scrollWidth-scroll.clientWidth;});
+  }
+
+  renderSummaryBars('hourlyBars','hourlyLabels',hourly,x=>x.occupancy,x=>formatHourKey(x.hourKey),x=>`${formatHourKey(x.hourKey)} — ${x.occupancy}% average occupancy (${x.samples} samples)`);
+  const dailyData=daily.map(x=>({...x,label:formatDayKey(x.dayKey),title:`${formatDayKey(x.dayKey)} — ${x.occupancy}% average occupancy`}));
+  renderSummaryBars('dailyBars','dailyLabels',dailyData,x=>x.occupancy,x=>x.label,x=>x.title);
+
+  const todayEl=document.getElementById('todaySummary');
+  if(todayEl){
+    todayEl.textContent=todayAvg===null?'Today: waiting for data':`Today so far: ${todayAvg}% average occupancy`;
+  }
+  const peak=S.peak&&S.peak.time?`${S.peak.occupancy}% at ${formatTime(S.peak.time)}`:'calculating…';
+  const peakEl=document.getElementById('peakInfo');
+  if(peakEl) peakEl.textContent='Peak occupancy: '+peak;
+}
+function renderSummaryBars(barId,labelId,data,valueFn,labelFn,titleFn){
+  const bars=document.getElementById(barId), labels=document.getElementById(labelId);
+  if(!bars||!labels)return;
+  if(!data.length){
+    bars.innerHTML='<div class="summary-empty">No completed period yet</div>';
+    labels.innerHTML='';
     return;
   }
-  el.innerHTML=data.map(p=>`<div class="time-bar-wrap" title="${formatTime(p.time)} — ${p.occupancy}% occupied (${p.occupied}/4)"><i class="time-bar" style="height:${Math.max(2,p.occupancy)}%"></i></div>`).join('');
-  labels.innerHTML=data.map(p=>`<span title="${formatTime(p.time)}">${formatTime(p.time).replace(':00 ',' ')}</span>`).join('');
-  const peak=S.peak&&S.peak.time?`${S.peak.occupancy}% at ${formatTime(S.peak.time)}`:'calculating…';
-  document.getElementById('peakInfo').textContent='Peak occupancy: '+peak;
+  bars.innerHTML=data.map(x=>`<div class="summary-bar-wrap" title="${titleFn(x)}"><i class="summary-bar" style="height:${Math.max(2,valueFn(x))}%"></i></div>`).join('');
+  labels.innerHTML=data.map(x=>`<span>${labelFn(x)}</span>`).join('');
+}
+function dayKey(iso){
+  const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(iso));
+  const g=t=>p.find(x=>x.type===t)?.value||'';
+  return `${g('year')}-${g('month')}-${g('day')}`;
+}
+function formatHourKey(k){
+  const [y,m,d,h]=k.split('-').map(Number);
+  return new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date(Date.UTC(y,m-1,d,h-5, -30)));
+}
+function formatDayKey(k){
+  const [y,m,d]=k.split('-').map(Number);
+  return new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',month:'short',day:'numeric'}).format(new Date(Date.UTC(y,m-1,d,0,0)));
 }
 
 let pushEnabledLocal=false;

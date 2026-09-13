@@ -28,6 +28,9 @@ let state={
   deviceOnline:false,
   events:[{a:'🟢 SYSTEM ONLINE',b:'SmartPark backend is running',time:new Date().toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true})}],
   history:[],
+  fiveMinuteSamples:[],
+  hourlyHistory:[],
+  dailyHistory:[],
   peak:{occupancy:0,time:null}
 };
 
@@ -36,19 +39,95 @@ const subscriptions=new Map();
 let forcedTimer=null;
 
 function now(){return new Date().toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});}
-function recordHistory(){
+const FIVE_MINUTE_MS=5*60*1000;
+let lastHistoryOccupancy=null;
+let lastSampleBucket=null;
+let lastFinalizedHourKey=null;
+let lastFinalizedDayKey=null;
+
+function indiaParts(date=new Date()){
+  const parts=new Intl.DateTimeFormat('en-CA',{
+    timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',hour12:false
+  }).formatToParts(date);
+  const get=t=>parts.find(p=>p.type===t)?.value||'00';
+  return {year:get('year'),month:get('month'),day:get('day'),hour:get('hour'),minute:get('minute')};
+}
+function indiaHourKey(iso){
+  const p=indiaParts(new Date(iso)); return `${p.year}-${p.month}-${p.day}-${p.hour}`;
+}
+function indiaDayKey(iso){
+  const p=indiaParts(new Date(iso)); return `${p.year}-${p.month}-${p.day}`;
+}
+function recordHistory(force=false){
   const occupied=state.slots.reduce((a,b)=>a+b,0);
   const occupancy=Math.round((occupied/4)*100);
+  const nowMs=Date.now();
+  const changed=lastHistoryOccupancy===null || occupancy!==lastHistoryOccupancy;
+  if(!force && !changed) return false;
   const nowIso=new Date().toISOString();
-  const last=state.history[state.history.length-1];
-  if(last && (Date.now()-new Date(last.time).getTime())<60000){
-    last.occupied=occupied; last.occupancy=occupancy; last.time=nowIso;
-  }else{
-    state.history.push({time:nowIso,occupied,occupancy});
-  }
+  state.history.push({time:nowIso,occupied,occupancy,kind:'change'});
   state.history=state.history.slice(-288);
+  lastHistoryOccupancy=occupancy;
+  updatePeak();
+  return true;
+}
+function updatePeak(){
   const peak=state.history.reduce((p,x)=>x.occupancy>p.occupancy?x:p,{occupancy:0,time:null});
   state.peak={occupancy:peak.occupancy,time:peak.time};
+}
+function average(items){
+  return items.length ? Math.round(items.reduce((a,x)=>a+x.occupancy,0)/items.length) : 0;
+}
+function finalizeCompletedPeriods(currentHourKey,currentDayKey){
+  const hours={};
+  for(const x of state.fiveMinuteSamples){
+    const k=indiaHourKey(x.time);
+    if(k!==currentHourKey) (hours[k]??=[]).push(x);
+  }
+  for(const [hourKey,items] of Object.entries(hours).sort()){
+    if(!state.hourlyHistory.some(x=>x.hourKey===hourKey)){
+      const avg=average(items);
+      const occupied=Math.round(items.reduce((a,x)=>a+x.occupied,0)/items.length);
+      state.hourlyHistory.push({hourKey,occupancy:avg,occupied,samples:items.length});
+    }
+  }
+  state.hourlyHistory=state.hourlyHistory.slice(-168);
+
+  const days={};
+  for(const x of state.hourlyHistory){
+    const dayKey=x.hourKey.slice(0,10);
+    if(dayKey!==currentDayKey) (days[dayKey]??=[]).push(x);
+  }
+  for(const [dayKey,items] of Object.entries(days).sort()){
+    if(!state.dailyHistory.some(x=>x.dayKey===dayKey)){
+      state.dailyHistory.push({
+        dayKey,
+        occupancy:average(items),
+        occupied:Math.round(items.reduce((a,x)=>a+x.occupied,0)/items.length),
+        hours:items.length,
+        complete:true
+      });
+    }
+  }
+  state.dailyHistory=state.dailyHistory.slice(-7);
+}
+function sampleFiveMinute(force=false){
+  if(!state.deviceOnline && !force) return false;
+  const nowMs=Date.now();
+  const bucket=Math.floor(nowMs/FIVE_MINUTE_MS);
+  if(!force && bucket===lastSampleBucket) return false;
+  const nowIso=new Date(nowMs).toISOString();
+  const occupied=state.slots.reduce((a,b)=>a+b,0);
+  const occupancy=Math.round((occupied/4)*100);
+  const hourKey=indiaHourKey(nowIso), dayKey=indiaDayKey(nowIso);
+  state.fiveMinuteSamples.push({time:nowIso,occupied,occupancy,kind:'interval'});
+  state.fiveMinuteSamples=state.fiveMinuteSamples.slice(-288);
+  lastSampleBucket=bucket;
+  finalizeCompletedPeriods(hourKey,dayKey);
+  lastFinalizedHourKey=hourKey;
+  lastFinalizedDayKey=dayKey;
+  return true;
 }
 function trim(){state.events=state.events.slice(0,30);}
 function broadcast(){
@@ -150,7 +229,11 @@ app.post('/api/device/state',(req,res)=>{
   if(typeof body.occupancy==='number') state.occupancy=body.occupancy;
   if(typeof body.vehiclesEntered==='number') state.vehiclesEntered=body.vehiclesEntered;
   if(typeof body.vehiclesExited==='number') state.vehiclesExited=body.vehiclesExited;
-  recordHistory(); touch(); broadcast(); res.json({ok:true,state});
+  touch();
+  const historyChanged=recordHistory();
+  const sampleChanged=sampleFiveMinute();
+  if(historyChanged||sampleChanged) updatePeak();
+  broadcast(); res.json({ok:true,state});
 });
 
 app.post('/api/device/event',(req,res)=>{
@@ -162,6 +245,12 @@ app.post('/api/device/event',(req,res)=>{
   else return res.status(400).json({ok:false,error:'Unknown event type'});
   res.json({ok:true,state});
 });
+
+setInterval(()=>{
+  if(state.deviceOnline) {
+    if(sampleFiveMinute()) broadcast();
+  }
+},15000);
 
 setInterval(()=>{
   if(state.deviceOnline&&state.lastSeen&&Date.now()-new Date(state.lastSeen).getTime()>25000){

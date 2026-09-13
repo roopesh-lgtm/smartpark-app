@@ -32,23 +32,38 @@
 <div class="card live-alerts"><div class="head"><h3>Live Alerts</h3><button class="viewall" onclick="showScreen('alerts')">View all ›</button></div><div id="dashboardNotes"></div></div></section>
 
 <section id="parking" class="screen"><div class="intro"><label>LIVE VIEW</label><h2>Parking Area</h2><p>Every slot updates when the ESP32 detects a vehicle.</p></div><div id="large" class="slots large"></div></section>
-<section id="analytics" class="screen"><div class="intro"><label>SYSTEM INSIGHTS</label><h2>Parking Analytics</h2></div><div class="stats"><article>Vehicles Entered<strong id="vin">37</strong></article><article>Vehicles Exited<strong id="vout">35</strong></article><article>Peak Occupancy<strong>100%</strong></article><article>Security Events<strong id="sc">0</strong></article></div><div class="card chart">
-<div class="head"><h3>Occupancy Today</h3><small id="historyStatus">LIVE HISTORY</small></div>
-<p class="chart-subtitle">Real ESP32 occupancy history. Hover a bar for the exact time and occupancy.</p>
-<div class="chart-frame">
-  <div class="y-axis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
-  <div class="chart-body">
-    <div class="plot-area">
-      <div class="gridline g100"></div><div class="gridline g75"></div><div class="gridline g50"></div><div class="gridline g25"></div><div class="gridline g0"></div>
-      <div id="bars" class="time-bars"></div>
-    </div>
-    <div id="timeLabels" class="time-labels"></div>
+<section id="analytics" class="screen"><div class="intro"><label>SYSTEM INSIGHTS</label><h2>Parking Analytics</h2></div>
+<div class="stats"><article>Vehicles Entered<strong id="vin">0</strong></article><article>Vehicles Exited<strong id="vout">0</strong></article><article>Peak Occupancy<strong id="peakValue">—</strong></article><article>Security Events<strong id="sc">0</strong></article></div>
+
+<div class="card analytics-block">
+  <div class="head"><h3>5-Minute Occupancy</h3><small>LIVE DETAIL</small></div>
+  <p class="chart-subtitle">One real ESP32 reading every 5 minutes. Occupancy changes are also recorded for live detail.</p>
+  <div class="chart-frame">
+    <div class="y-axis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+    <div class="chart-scroll" id="chartScroll"><div class="chart-content" id="chartContent">
+      <div class="plot-area"><div class="gridline g100"></div><div class="gridline g75"></div><div class="gridline g50"></div><div class="gridline g25"></div><div class="gridline g0"></div><div id="bars" class="time-bars"></div></div>
+      <div id="timeLabels" class="time-labels"></div>
+    </div></div>
   </div>
+  <div class="x-axis-title">Time (IST)</div>
 </div>
-<div class="x-axis-title">Time (IST)</div>
-<div class="peak-line" id="peakInfo">Peak occupancy: calculating…</div>
-</div></section>
+
+<div class="card analytics-block">
+  <div class="head"><h3>Hourly Occupancy</h3><small>COMPLETED HOURS</small></div>
+  <p class="chart-subtitle">After each hour completes, its bar shows the average occupancy from that hour's 5-minute samples.</p>
+  <div class="summary-scroll"><div class="summary-content"><div class="summary-bars" id="hourlyBars"></div><div class="summary-labels" id="hourlyLabels"></div></div></div>
+</div>
+
+<div class="card analytics-block">
+  <div class="head"><h3>Daily Overview</h3><small>DAY SUMMARY</small></div>
+  <p class="chart-subtitle">At the end of each day, the complete day's average becomes one daily bar.</p>
+  <div class="daily-now" id="todaySummary">Today: waiting for data</div>
+  <div class="summary-scroll"><div class="summary-content daily-content"><div class="summary-bars" id="dailyBars"></div><div class="summary-labels" id="dailyLabels"></div></div></div>
+  <div class="peak-line" id="peakInfo">Peak occupancy: calculating…</div>
+</div>
+</section>
+
 <section id="security" class="screen"><div class="intro"><label>PROTECTION</label><h2>Security Center</h2></div><div id="securityCard" class="security"><span>🛡️</span><div><small>CURRENT STATUS</small><h2 id="ss">SYSTEM SECURE</h2><p id="st">No active security alert.</p></div></div><div class="cols"><div class="card"><h3>Forced Entry</h3><h2 id="fc">0</h2><p>Live events detected by the ESP32 security system.</p></div><div class="card"><h3>Emergency Mode</h3><h2 id="em">NORMAL</h2><p>Live status from the physical emergency switch.</p></div></div></section>
 <section id="alerts" class="screen"><div class="intro"><label>EVENT CENTER</label><h2>Notifications</h2></div><div class="card" id="notes"></div></section>
-<section id="settings" class="screen"><div class="intro"><label>CONTROL CENTER</label><h2>Settings</h2></div><div class="card settings"><div>Security alerts <b>ON</b></div><div>Emergency alerts <b>ON</b></div><div>Parking full alerts <b>ON</b></div><div>Slot available alerts <b>ON</b></div><div>Push notifications <b id="pushStatus">PUSH NOT ENABLED</b></div><div><span>Phone alerts</span><button id="enablePush" class="push-btn">Enable Push Notifications</button></div><div>Application <b>SmartPark v1.1</b></div></div></section>
+<section id="settings" class="screen"><div class="intro"><label>CONTROL CENTER</label><h2>Settings</h2></div><div class="card settings"><div>Security alerts <b>ON</b></div><div>Emergency alerts <b>ON</b></div><div>Parking full alerts <b>ON</b></div><div>Slot available alerts <b>ON</b></div><div>Push notifications <b id="pushStatus">PUSH NOT ENABLED</b></div><div><span>Phone alerts</span><button id="enablePush" class="push-btn">Enable Push Notifications</button></div><div>Application <b>SmartPark v1.2</b></div></div></section>
 </main></div><div id="toast"></div><script src="app.js"></script></body></html>
