@@ -83,11 +83,18 @@ function formatTime(iso){
   catch{return new Date(iso).toLocaleTimeString();}
 }
 function renderHistory(){
-  const el=document.getElementById('bars'); if(!el)return;
+  const el=document.getElementById('bars');
+  const labels=document.getElementById('timeLabels');
+  if(!el||!labels)return;
   const data=(S.history||[]).slice(-24);
-  if(!data.length){el.innerHTML='<div class="chart-empty">Waiting for real IoT occupancy history…</div>';document.getElementById('chartAxis').innerHTML='';document.getElementById('peakInfo').textContent='Peak occupancy: waiting for data';return;}
-  el.innerHTML=data.map(p=>`<div class="time-bar-wrap" title="${formatTime(p.time)} — ${p.occupancy}% occupied (${p.occupied}/4)"><i class="time-bar" style="height:${Math.max(4,p.occupancy)}%"></i><span>${formatTime(p.time)}</span></div>`).join('');
-  document.getElementById('chartAxis').innerHTML='<span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>';
+  if(!data.length){
+    el.innerHTML='<div class="chart-empty">Waiting for real IoT occupancy history…</div>';
+    labels.innerHTML='';
+    document.getElementById('peakInfo').textContent='Peak occupancy: waiting for data';
+    return;
+  }
+  el.innerHTML=data.map(p=>`<div class="time-bar-wrap" title="${formatTime(p.time)} — ${p.occupancy}% occupied (${p.occupied}/4)"><i class="time-bar" style="height:${Math.max(2,p.occupancy)}%"></i></div>`).join('');
+  labels.innerHTML=data.map(p=>`<span title="${formatTime(p.time)}">${formatTime(p.time).replace(':00 ',' ')}</span>`).join('');
   const peak=S.peak&&S.peak.time?`${S.peak.occupancy}% at ${formatTime(S.peak.time)}`:'calculating…';
   document.getElementById('peakInfo').textContent='Peak occupancy: '+peak;
 }
