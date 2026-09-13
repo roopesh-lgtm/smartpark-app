@@ -1,4 +1,4 @@
-const S={slots:[0,1,0,1],forced:0,forcedActive:false,em:false,entry:1,exit:0,recommended:2,occupancy:50,vehiclesEntered:0,vehiclesExited:0,deviceOnline:false,notes:[]};
+const S={slots:[0,1,0,1],forced:0,forcedActive:false,em:false,entry:1,exit:0,recommended:2,occupancy:50,vehiclesEntered:0,vehiclesExited:0,deviceOnline:false,lastSeen:null,history:[],peak:{occupancy:0,time:null},notes:[]};
 const names={home:'Live Dashboard',parking:'Parking Area',analytics:'Parking Analytics',security:'Security Center',alerts:'Notifications',settings:'Settings'};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showScreen(b.dataset.s));
 
@@ -26,8 +26,18 @@ function render(){
   document.getElementById('ss').textContent=S.em?'EMERGENCY MODE ACTIVE':(S.forcedActive?'FORCED ENTRY DETECTED':'SYSTEM SECURE');
   document.getElementById('st').textContent=S.em?'Both gates are open for emergency operation.':(S.forcedActive?'Security alert active. Alarm triggered.':'No active security alert.');
   slots('map'); slots('large'); renderNotes();
-  document.getElementById('deviceState').textContent=S.deviceOnline?'ESP32 ONLINE':'DEVICE OFFLINE';
-  document.getElementById('deviceDot').textContent=S.deviceOnline?'●':'●';
+  document.getElementById('deviceState').innerHTML=S.deviceOnline?'ESP32 ONLINE<small>Live connection</small>':'DEVICE OFFLINE<small>No heartbeat received</small>';
+  document.getElementById('deviceDot').textContent='●';
+  const statusCard=document.getElementById('systemStatusCard');
+  if(statusCard){
+    statusCard.classList.toggle('online',S.deviceOnline);
+    statusCard.classList.toggle('offline',!S.deviceOnline);
+    document.getElementById('systemStatusIcon').textContent=S.deviceOnline?'●':'●';
+    document.getElementById('systemStatusText').textContent=S.deviceOnline?'ESP32 ONLINE':'SYSTEM OFFLINE';
+    document.getElementById('systemStatusDetail').textContent=S.deviceOnline?'Live connection':'No ESP32 heartbeat received';
+    document.getElementById('lastSeenText').textContent=S.lastSeen?formatTime(S.lastSeen):'Waiting…';
+  }
+  renderHistory();
   const ps=document.getElementById('pushStatus'); if(ps) ps.textContent=pushEnabledLocal?'PUSH ENABLED':'PUSH NOT ENABLED';
 }
 
@@ -56,6 +66,9 @@ async function applyState(d){
   if('vehiclesEntered'in d)S.vehiclesEntered=d.vehiclesEntered;
   if('vehiclesExited'in d)S.vehiclesExited=d.vehiclesExited;
   if('deviceOnline'in d)S.deviceOnline=!!d.deviceOnline;
+  if('lastSeen'in d)S.lastSeen=d.lastSeen;
+  if(Array.isArray(d.history))S.history=d.history;
+  if(d.peak)S.peak=d.peak;
   if(d.events)S.notes=d.events.map(e=>({a:e.a,b:e.b,time:e.time}));
   render();
 }
@@ -65,8 +78,19 @@ async function forced(){try{await applyState(await post('/api/demo/forced'));toa
 async function emergency(){try{await applyState(await post('/api/demo/emergency'));toast(S.em?'Emergency mode activated':'Emergency mode cleared');}catch{noteLocal('⚠️ EMERGENCY','Backend unavailable');}}
 async function gateDemo(){['entryGateCard','exitGateCard'].forEach(id=>{let e=document.getElementById(id);e.classList.remove('gate-moving');void e.offsetWidth;e.classList.add('gate-moving');setTimeout(()=>e.classList.remove('gate-moving'),700)});toast('Gate animation running');}
 
-let vals=[20,35,48,65,82,100,75,58,70,45,62,50];
-document.getElementById('bars').innerHTML=vals.map(v=>`<i style="height:${v}%"></i>`).join('');
+function formatTime(iso){
+  try{return new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date(iso));}
+  catch{return new Date(iso).toLocaleTimeString();}
+}
+function renderHistory(){
+  const el=document.getElementById('bars'); if(!el)return;
+  const data=(S.history||[]).slice(-24);
+  if(!data.length){el.innerHTML='<div class="chart-empty">Waiting for real IoT occupancy history…</div>';document.getElementById('chartAxis').innerHTML='';document.getElementById('peakInfo').textContent='Peak occupancy: waiting for data';return;}
+  el.innerHTML=data.map(p=>`<div class="time-bar-wrap" title="${formatTime(p.time)} — ${p.occupancy}% occupied (${p.occupied}/4)"><i class="time-bar" style="height:${Math.max(4,p.occupancy)}%"></i><span>${formatTime(p.time)}</span></div>`).join('');
+  document.getElementById('chartAxis').innerHTML='<span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>';
+  const peak=S.peak&&S.peak.time?`${S.peak.occupancy}% at ${formatTime(S.peak.time)}`:'calculating…';
+  document.getElementById('peakInfo').textContent='Peak occupancy: '+peak;
+}
 
 let pushEnabledLocal=false;
 async function setupPush(){
@@ -99,6 +123,6 @@ setupPush();
 
 async function bootBackend(){
   try{await applyState(await api('/api/state'));const es=new EventSource('/api/stream');es.onmessage=e=>applyState(JSON.parse(e.data));es.onerror=()=>toast('Backend connection retrying…');}
-  catch{noteLocal('🟡 DEMO MODE','Backend not running — UI simulation active');}
+  catch{noteLocal('🔴 OFFLINE','SmartPark backend unavailable');}
 }
 bootBackend();

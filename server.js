@@ -26,14 +26,30 @@ let state={
   vehiclesExited:0,
   lastSeen:null,
   deviceOnline:false,
-  events:[{a:'🟢 SYSTEM ONLINE',b:'SmartPark backend is running',time:new Date().toLocaleTimeString()}]
+  events:[{a:'🟢 SYSTEM ONLINE',b:'SmartPark backend is running',time:new Date().toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true})}],
+  history:[],
+  peak:{occupancy:0,time:null}
 };
 
 const clients=new Set();
 const subscriptions=new Map();
 let forcedTimer=null;
 
-function now(){return new Date().toLocaleTimeString();}
+function now(){return new Date().toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});}
+function recordHistory(){
+  const occupied=state.slots.reduce((a,b)=>a+b,0);
+  const occupancy=Math.round((occupied/4)*100);
+  const nowIso=new Date().toISOString();
+  const last=state.history[state.history.length-1];
+  if(last && (Date.now()-new Date(last.time).getTime())<60000){
+    last.occupied=occupied; last.occupancy=occupancy; last.time=nowIso;
+  }else{
+    state.history.push({time:nowIso,occupied,occupancy});
+  }
+  state.history=state.history.slice(-288);
+  const peak=state.history.reduce((p,x)=>x.occupancy>p.occupancy?x:p,{occupancy:0,time:null});
+  state.peak={occupancy:peak.occupancy,time:peak.time};
+}
 function trim(){state.events=state.events.slice(0,30);}
 function broadcast(){
   const data='data: '+JSON.stringify(state)+'\n\n';
@@ -134,7 +150,7 @@ app.post('/api/device/state',(req,res)=>{
   if(typeof body.occupancy==='number') state.occupancy=body.occupancy;
   if(typeof body.vehiclesEntered==='number') state.vehiclesEntered=body.vehiclesEntered;
   if(typeof body.vehiclesExited==='number') state.vehiclesExited=body.vehiclesExited;
-  touch(); broadcast(); res.json({ok:true,state});
+  recordHistory(); touch(); broadcast(); res.json({ok:true,state});
 });
 
 app.post('/api/device/event',(req,res)=>{
