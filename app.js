@@ -140,16 +140,39 @@ function renderSummaryBars(barId,labelId,data,valueFn,labelFn,titleFn){
     bars.innerHTML='<div class="summary-empty">No completed period yet</div>';
     labels.innerHTML='';
     const content=bars.closest('.summary-content');
-    if(content) content.style.width='100%';
+    if(content){
+      const baseWidth=window.matchMedia('(max-width:700px)').matches?760:980;
+      content.style.width=baseWidth+'px';
+      content.style.minWidth=baseWidth+'px';
+    }
     return;
   }
   bars.innerHTML=data.map(x=>`<div class="summary-bar-wrap" title="${titleFn(x)}"><i class="summary-bar" style="height:${Math.max(2,Math.min(100,valueFn(x)))}%"></i></div>`).join('');
   labels.innerHTML=data.map(x=>`<span title="${titleFn(x)}">${labelFn(x)}</span>`).join('');
   const content=bars.closest('.summary-content');
-  const width=Math.max(720,data.length*54+20);
-  if(content) content.style.width=width+'px';
+  // Same sizing model as the 5-minute chart: the content becomes wider than
+  // the viewport as data grows, so the parent scroll container handles X scrolling.
+  // Keep the same persistent scrollable canvas as the 5-minute chart.
+  // It remains wide even before the first completed period, and grows
+  // further as hourly/daily bars accumulate.
+  const baseWidth=window.matchMedia('(max-width:700px)').matches?760:980;
+  const width=Math.max(baseWidth,data.length*54+20);
+  if(content){
+    content.style.width=width+'px';
+    content.style.minWidth=width+'px';
+  }
+  const plot=content?.querySelector('.summary-plot');
+  if(plot){
+    plot.style.width=width+'px';
+    plot.style.minWidth=width+'px';
+  }
+  const labelsRow=content?.querySelector('.summary-labels');
+  if(labelsRow){
+    labelsRow.style.width=width+'px';
+    labelsRow.style.minWidth=width+'px';
+  }
   const scroll=bars.closest('.summary-scroll');
-  if(scroll) requestAnimationFrame(()=>{scroll.scrollLeft=scroll.scrollWidth-scroll.clientWidth;});
+  if(scroll) requestAnimationFrame(()=>{scroll.scrollLeft=Math.max(0,scroll.scrollWidth-scroll.clientWidth);});
 }
 
 function dayKey(iso){

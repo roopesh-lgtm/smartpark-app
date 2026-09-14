@@ -235,6 +235,30 @@ app.post('/api/demo/slot',(req,res)=>{
 app.post('/api/demo/forced',(req,res)=>{recordForced();res.json(state);});
 app.post('/api/demo/emergency',(req,res)=>{recordEmergency(!state.em);res.json(state);});
 
+/* v8.10.4 demo helper: seed completed hourly/daily bars for visual testing.
+   It is intentionally API-only; no simulation controls are added to the UI. */
+app.post('/api/demo/analytics',(req,res)=>{
+  const hours=Math.max(1,Math.min(48,Number(req.body?.hours)||24));
+  const days=Math.max(1,Math.min(30,Number(req.body?.days)||7));
+  const nowMs=Date.now();
+  state.hourlyHistory=[];
+  state.dailyHistory=[];
+  for(let i=hours;i>=1;i--){
+    const t=new Date(nowMs-i*60*60*1000);
+    const p=indiaParts(t);
+    const hourKey=`${p.year}-${p.month}-${p.day}-${p.hour}`;
+    const occupancy=(i*17+23)%101;
+    state.hourlyHistory.push({hourKey,occupancy,occupied:Math.round(occupancy/25),samples:12});
+  }
+  for(let i=days;i>=1;i--){
+    const t=new Date(nowMs-i*24*60*60*1000);
+    const dayKey=indiaDayKey(t);
+    const occupancy=(i*13+41)%101;
+    state.dailyHistory.push({dayKey,occupancy,occupied:Math.round(occupancy/25),hours:12,complete:true});
+  }
+  broadcast(); res.json({ok:true,hours,days,state});
+});
+
 app.post('/api/device/state',(req,res)=>{
   const body=req.body||{};
   if(Array.isArray(body.slots)&&body.slots.length===4) state.slots=body.slots.map(v=>v?1:0);
